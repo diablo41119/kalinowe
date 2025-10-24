@@ -7,14 +7,54 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
---bg:#0b1020;--card:#121933;--muted:#9bb0d6;--accent:#9fd25b;--text:#eef3ff;
---eagle:#8b5cf6; /* fiolet */
---birdie:#38bdf8; /* jasny niebieski */
---par:#22c55e; /* zielony */
---bogey1:#facc15; /* żółty */
---bogey2:#f97316; /* pomarańczowy */
---bogey3:#ef4444; /* czerwony */
+--bg:#0b1020;
+--card:rgba(18,25,51,0.92);
+--muted:#9bb0d6;
+--accent:#9fd25b;
+--text:#eef3ff;
+--eagle:#8b5cf6;
+--birdie:#38bdf8;
+--par:#22c55e;
+--bogey1:#facc15;
+--bogey2:#f97316;
+--bogey3:#ef4444;
 }
+
+/* 🌿 TŁO W STYLU POLA GOLFOWEGO */
+body{
+margin:0;
+color:var(--text);
+background:
+radial-gradient(circle at 70% 20%, rgba(255,255,255,0.08), transparent 40%),
+radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06), transparent 45%),
+linear-gradient(to bottom right, #0a3d10 0%, #06420c 40%, #072a0a 100%);
+background-attachment: fixed;
+background-repeat: no-repeat;
+min-height:100vh;
+}
+
+/* karty i pola na tle półprzezroczyste, żeby tło prześwitywało */
+.card, .grid, .stats-card, .weather .box{
+background:var(--card);
+backdrop-filter:blur(6px);
+border:1px solid rgba(255,255,255,0.1);
+}
+
+/* nagłówek też lekko transparentny */
+header{
+position:sticky;
+top:0;
+z-index:50;
+background:rgba(10,40,15,0.9);
+backdrop-filter:blur(10px);
+border-bottom:1px solid rgba(255,255,255,0.15);
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+align-items:center;
+padding:10px;
+}
+  
 *{box-sizing:border-box;font-family:'Inter',sans-serif}
 body{margin:0;background:var(--bg);color:var(--text)}
 header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);backdrop-filter:blur(8px);
@@ -440,3 +480,4 @@ document.getElementById("joinBtn").click();
 </script>
 </body>
 </html>
+
