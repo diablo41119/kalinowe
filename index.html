@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="utf-8" />
@@ -170,7 +171,7 @@ row+=`<td><input class="score ${cls}" data-player="${p}" data-hole="${h}" type="
 }
 const txt=PLAYERS.map(n=>{
 const sc=scores[n]?.["h"+h];if(sc==null)return null;
-const d=sc-(par["h"+h]??4);return ${n}:${signed(d)};
+const d=sc-(par["h"+h]??4);return `${n}:${signed(d)}`;
 }).filter(Boolean).join(" • ");
 row+=`<td><span class="badge">${txt||"—"}</span></td>`;
 const tr=document.createElement("tr");tr.innerHTML=row;tbody.append(tr);
@@ -180,12 +181,12 @@ const trf=document.createElement("tr");const pars=sumPar(par);
 trf.innerHTML=`<th>SUMA</th><th>${pars}</th>`+
 PLAYERS.map(p=>{
 const t=playerTotal(p,par,scores);
-return <th><span class="badge ${t.delta<0?"good":t.delta>0?"bad":""}">${t.s??"-"} (${signed(t.delta)})</span></th>;
+return `<th><span class="badge ${t.delta<0?"good":t.delta>0?"bad":""}">${t.s??"-"} (${signed(t.delta)})</span></th>`;
 }).join("")+`<th></th>`;
 tfoot.append(trf);
-tbody.querySelectorAll("input.par").forEach(i=>i.onchange=()=>updateField(par.h${i.dataset.hole},+i.value));
+tbody.querySelectorAll("input.par").forEach(i=>i.onchange=()=>updateField(`par.h${i.dataset.hole}`,+i.value));
 tbody.querySelectorAll("input.score").forEach(i=>i.onchange=()=>{
-updateField(scores.${i.dataset.player}.h${i.dataset.hole},i.value===""?null:+i.value);
+updateField(`scores.${i.dataset.player}.h${i.dataset.hole}`,i.value===""?null:+i.value);
 });
 }
 
