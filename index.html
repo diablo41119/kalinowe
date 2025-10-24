@@ -6,42 +6,49 @@
 <title>Turniej Kalinowe Pole – LiveScore (Pary)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b1020;--card:#121933;--muted:#9bb0d6;--accent:#9fd25b;--text:#eef3ff;
---birdie:#1faa67;--par:#b5b800;--bogey:#e14b4b;}
-body.light{--bg:#f2f4ff;--card:#ffffff;--muted:#5b678a;--accent:#0077ff;--text:#0a0a0a;
---birdie:#15803d;--par:#eab308;--bogey:#dc2626;}
+:root{
+--bg:#0b1020;--card:#121933;--muted:#9bb0d6;--accent:#9fd25b;--text:#eef3ff;
+--eagle:#8b5cf6; /* fiolet */
+--birdie:#38bdf8; /* jasny niebieski */
+--par:#22c55e; /* zielony */
+--bogey1:#facc15; /* żółty */
+--bogey2:#f97316; /* pomarańczowy */
+--bogey3:#ef4444; /* czerwony */
+}
+body.light{
+--bg:#f2f4ff;--card:#ffffff;--muted:#5b678a;--accent:#0077ff;--text:#0a0a0a;
+}
 *{box-sizing:border-box;font-family:'Inter',sans-serif}
 body{margin:0;background:var(--bg);color:var(--text)}
-header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);
-backdrop-filter:blur(8px);border-bottom:1px solid #22305e;
-display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px}
+header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);backdrop-filter:blur(8px);
+border-bottom:1px solid #22305e;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px}
 h1{font-size:18px;margin:0 10px 0 0;font-weight:800}
 button{cursor:pointer;border:none;border-radius:10px;padding:8px 12px;font-weight:700}
 .btn{background:var(--accent);color:#0a0a0a}
 .secondary{background:var(--card);color:var(--text);border:1px solid #2a3a72}
-input[type=text]{padding:8px 10px;border-radius:10px;border:1px solid #2a3a72;
-background:#0e1430;color:var(--text)}
+input[type=text]{padding:8px 10px;border-radius:10px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
 main{padding:10px;max-width:1200px;margin:0 auto}
 .section-title{margin:14px 4px 6px;font-weight:900;color:var(--accent);font-size:18px}
 .grid{border-radius:12px;border:1px solid #2a3a72;background:var(--card);overflow:hidden}
 table{width:100%;border-collapse:collapse;min-width:760px}
 th,td{padding:6px;border-bottom:1px dashed #243468;text-align:center}
 th:first-child,td:first-child{text-align:left;padding-left:10px}
-input[type=number]{width:70px;text-align:center;padding:6px;border-radius:8px;
-border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
-.birdie{background:var(--birdie) !important;color:#fff}
-.par{background:var(--par) !important;color:#000}
-.bogey{background:var(--bogey) !important;color:#fff}
+input[type=number]{width:70px;text-align:center;padding:6px;border-radius:8px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
+.score.eagle{background:var(--eagle);color:#fff}
+.score.birdie{background:var(--birdie);color:#000}
+.score.par{background:var(--par);color:#fff}
+.score.bogey1{background:var(--bogey1);color:#000}
+.score.bogey2{background:var(--bogey2);color:#fff}
+.score.bogey3{background:var(--bogey3);color:#fff}
 .leaderboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid #2a3a72;border-radius:12px;padding:10px}
 .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .badge{padding:3px 7px;border-radius:999px;background:#213169;font-size:13px;display:inline-block}
 .good{background:rgba(74,210,115,0.15);border:1px solid #4ad273}
 .bad{background:rgba(255,107,107,0.15);border:1px solid #ff6b6b}
-.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
-@media(max-width:480px){input[type=number]{width:60px}}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:15px}
 .stats-card{background:var(--card);border:1px solid #2a3a72;border-radius:10px;padding:8px 12px}
+.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
 </style>
 </head>
 <body>
@@ -140,6 +147,16 @@ const pars=sumPar(par);const net=has?gross-(team.hcp||0):null;const delta=has?gr
 return {gross:has?gross:null,net,delta};
 }
 
+function colorClass(diff){
+if(diff<=-2)return"eagle";
+if(diff==-1)return"birdie";
+if(diff==0)return"par";
+if(diff==1)return"bogey1";
+if(diff==2)return"bogey2";
+if(diff>=3)return"bogey3";
+return"";
+}
+
 function renderTable(par,scores){
 thead.innerHTML=`<tr><th>Dołek</th><th>PAR</th>${PLAYERS.map(p=>`<th>${p}</th>`).join("")}<th>± do PAR</th></tr>`;
 tbody.innerHTML="";
@@ -149,7 +166,7 @@ let row=`<td>H${h}</td><td><input class="par" data-hole="${h}" type="number" min
 for(const p of PLAYERS){
 const v=scores[p]?.["h"+h];
 const diff=v!=null?v-parVal:null;
-const cls=diff==null?"":diff<0?"birdie":diff>0?"bogey":"par";
+const cls=colorClass(diff);
 row+=`<td><input class="score ${cls}" data-player="${p}" data-hole="${h}" type="number" value="${v??""}" min="1" max="20"></td>`;
 }
 const txt=PLAYERS.map(n=>{
@@ -206,11 +223,12 @@ teamboard.append(c);
 function renderStats(par,scores){
 stats.innerHTML="";
 PLAYERS.forEach(p=>{
-let bird=0,parsC=0,bog=0,total=0,count=0;
+let bird=0,eagle=0,parsC=0,bog1=0,bog2=0,bog3=0,total=0,count=0;
 for(let h=1;h<=HOLES;h++){
-const sc=scores[p]?.["h"+h];const pa=par["h"+h]??4;
-if(sc!=null){count++;total+=sc;
-if(sc<pa)bird++;else if(sc==pa)parsC++;else bog++;
+const sc=scores[p]?.["h"+h];const pa=par["h"+h]??4;if(sc!=null){count++;total+=sc;
+const diff=sc-pa;
+if(diff<=-2)eagle++;else if(diff==-1)bird++;else if(diff==0)parsC++;
+else if(diff==1)bog1++;else if(diff==2)bog2++;else if(diff>=3)bog3++;
 }
 }
 if(count===0)return;
@@ -218,7 +236,8 @@ const avg=(total/count).toFixed(1);
 const card=document.createElement("div");card.className="stats-card";
 card.innerHTML=`<b>${p}</b><br>
 Średni wynik: ${avg}<br>
-Birdie: ${bird}, Par: ${parsC}, Bogey: ${bog}`;
+Eagle: ${eagle}, Birdie: ${bird}, Par: ${parsC}<br>
++1: ${bog1}, +2: ${bog2}, +3+: ${bog3}`;
 stats.append(card);
 });
 }
