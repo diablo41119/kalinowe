@@ -15,9 +15,6 @@
 --bogey2:#f97316; /* pomarańczowy */
 --bogey3:#ef4444; /* czerwony */
 }
-body.light{
---bg:#f2f4ff;--card:#ffffff;--muted:#5b678a;--accent:#0077ff;--text:#0a0a0a;
-}
 *{box-sizing:border-box;font-family:'Inter',sans-serif}
 body{margin:0;background:var(--bg);color:var(--text)}
 header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);backdrop-filter:blur(8px);
@@ -27,6 +24,11 @@ button{cursor:pointer;border:none;border-radius:10px;padding:8px 12px;font-weigh
 .btn{background:var(--accent);color:#0a0a0a}
 .secondary{background:var(--card);color:var(--text);border:1px solid #2a3a72}
 input[type=text]{padding:8px 10px;border-radius:10px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
+
+.tabs{display:flex;gap:6px;margin-left:10px}
+.tab{background:transparent;border:1px solid #2a3a72;color:var(--text)}
+.tab.active{background:var(--accent);color:#0a0a0a;border-color:transparent}
+
 main{padding:10px;max-width:1200px;margin:0 auto}
 .section-title{margin:14px 4px 6px;font-weight:900;color:var(--accent);font-size:18px}
 .grid{border-radius:12px;border:1px solid #2a3a72;background:var(--card);overflow:hidden}
@@ -34,40 +36,79 @@ table{width:100%;border-collapse:collapse;min-width:760px}
 th,td{padding:6px;border-bottom:1px dashed #243468;text-align:center}
 th:first-child,td:first-child{text-align:left;padding-left:10px}
 input[type=number]{width:70px;text-align:center;padding:6px;border-radius:8px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
+
 .score.eagle{background:var(--eagle);color:#fff}
 .score.birdie{background:var(--birdie);color:#000}
 .score.par{background:var(--par);color:#fff}
 .score.bogey1{background:var(--bogey1);color:#000}
 .score.bogey2{background:var(--bogey2);color:#fff}
 .score.bogey3{background:var(--bogey3);color:#fff}
+
 .leaderboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.card{background:var(--card);border:1px solid #2a3a72;border-radius:12px;padding:10px}
+.card{background:var(--card);border:1px solid #2a3a72;border-radius:12px;padding:10px;position:relative}
+
+/* Live animation FLIP */
+.card.animating{transition:transform .35s ease, opacity .35s ease}
+.card.ghost{opacity:.6}
+
+/* TV mode */
+.tv .edit-sections{display:none}
+.tv .leaderboard{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.tv h3{font-size:28px}
+.tv .badge{font-size:20px;padding:6px 10px}
+.tv .section-title{font-size:22px}
+.tv main{max-width:1400px}
+
+/* Badges etc. */
 .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .badge{padding:3px 7px;border-radius:999px;background:#213169;font-size:13px;display:inline-block}
 .good{background:rgba(74,210,115,0.15);border:1px solid #4ad273}
 .bad{background:rgba(255,107,107,0.15);border:1px solid #ff6b6b}
+.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
+
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:15px}
 .stats-card{background:var(--card);border:1px solid #2a3a72;border-radius:10px;padding:8px 12px}
-.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
+
+/* Weather */
+.weather{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.weather .box{background:var(--card);border:1px solid #2a3a72;border-radius:10px;padding:12px}
+.weather .big{font-size:32px;font-weight:800}
+.weather .muted{color:var(--muted);font-size:13px}
+
+/* Sections visibility */
+.view{display:none}
+.view.active{display:block}
+
+/* Small */
+@media(max-width:480px){
+input[type=number]{width:60px}
+}
 </style>
 </head>
 <body>
 <header>
 <h1>Turniej Kalinowe Pole – LiveScore (Pary)</h1>
-<button id="toggleTheme" class="secondary">🌙/☀️</button>
-<div style="margin-left:auto;display:flex;gap:6px">
+<div class="tabs">
+<button class="tab active" data-view="scoresView">Wyniki</button>
+<button class="tab" data-view="weatherView">Pogoda</button>
+<button class="tab" id="tvBtn">Tablica (TV)</button>
+</div>
+<div style="margin-left:auto;display:flex;gap:6px" class="edit-sections">
 <input id="gameId" placeholder="ID gry" value="kalinowe"/>
 <button id="joinBtn" class="btn">Dołącz</button>
 </div>
 </header>
 
 <main>
+<!-- WIDOK: WYNIKI -->
+<section id="scoresView" class="view active">
 <div class="section-title">Indywidualny leaderboard</div>
 <section id="leaderboard" class="leaderboard"></section>
 
 <div class="section-title">Leaderboard par (Best Ball)</div>
 <section id="teamboard" class="leaderboard"></section>
 
+<div class="edit-sections">
 <div class="section-title">Tabela wyników</div>
 <div class="grid">
 <table><thead id="thead"></thead><tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot></table>
@@ -75,11 +116,46 @@ input[type=number]{width:70px;text-align:center;padding:6px;border-radius:8px;bo
 
 <div class="section-title">Statystyki rundy</div>
 <section id="stats" class="stats-grid"></section>
+</div>
+</section>
+
+<!-- WIDOK: POGODA -->
+<section id="weatherView" class="view">
+<div class="section-title">Pogoda – Kalinowe Pole</div>
+<div id="weather" class="weather">
+<div class="box"><div class="big" id="wTemp">--°C</div><div class="muted">Temperatura (odczuwalna: <span id="wApp">--</span>°C)</div></div>
+<div class="box"><div class="big" id="wWind">-- m/s</div><div class="muted">Wiatr (<span id="wDir">--</span>)</div></div>
+<div class="box"><div class="big" id="wCond">--</div><div class="muted">Warunki</div></div>
+<div class="box"><div class="big" id="wTime">--:--</div><div class="muted">Ostatnia aktualizacja</div></div>
+</div>
+<p class="footer">Aktualizacja automatycznie co 15 minut (Open-Meteo)</p>
+</section>
 
 <p class="footer">Live Firestore • Best Ball • Kalinowe Pole</p>
 </main>
 
 <script type="module">
+/* ----------- UI: zakładki + TV mode ----------- */
+const tabs = document.querySelectorAll('.tab[data-view]');
+tabs.forEach(t => t.addEventListener('click', ()=>{
+tabs.forEach(x=>x.classList.remove('active'));
+t.classList.add('active');
+const view = t.dataset.view;
+document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+document.getElementById(view).classList.add('active');
+}));
+
+// TV mode: przełącznik (duże cyfry, brak edycji)
+document.getElementById('tvBtn').addEventListener('click', ()=>{
+document.body.classList.toggle('tv');
+// W TV mode pokazujemy tylko leaderboardy (sekcja scoresView), bez edycji
+tabs.forEach(x=>x.classList.remove('active'));
+document.querySelector('.tab[data-view="scoresView"]').classList.add('active');
+document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+document.getElementById('scoresView').classList.add('active');
+});
+
+/* ----------- Firebase ----------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -91,6 +167,7 @@ projectId:"kalinowe-pola"
 });
 const db=getFirestore(app);
 
+/* ----------- Ustawienia gry ----------- */
 const PLAYERS=["Oliwia","Karolina","Jędrek","Mikołaj","Krystian","Kosma"];
 const TEAMS={
 jk:{name:"Jędrek + Kosma",players:["Jędrek","Kosma"],hcp:30},
@@ -100,6 +177,7 @@ ko:{name:"Karolina + Oliwia",players:["Karolina","Oliwia"],hcp:38}
 const HOLES=18;
 let state={}, gameId="kalinowe";
 
+// refs
 const thead=document.getElementById("thead"),
 tbody=document.getElementById("tbody"),
 tfoot=document.getElementById("tfoot"),
@@ -107,46 +185,41 @@ leaderboard=document.getElementById("leaderboard"),
 teamboard=document.getElementById("teamboard"),
 stats=document.getElementById("stats");
 
-document.getElementById("toggleTheme").onclick=()=>document.body.classList.toggle("light");
 document.getElementById("joinBtn").onclick=async()=>{
-gameId=document.getElementById("gameId").value||"kalinowe";
+gameId=document.getElementById("gameId").value || "kalinowe";
 const ref=doc(db,"games",gameId);
 const s=await getDoc(ref);
 if(!s.exists()){
 const par={},scores={};
-for(let h=1;h<=HOLES;h++)par["h"+h]=4;
-for(const p of PLAYERS){scores[p]={};for(let h=1;h<=HOLES;h++)scores[p]["h"+h]=null;}
+for(let h=1;h<=HOLES;h++) par["h"+h]=4;
+for(const p of PLAYERS){ scores[p]={}; for(let h=1;h<=HOLES;h++) scores[p]["h"+h]=null; }
 await setDoc(ref,{par,scores,teams:TEAMS});
 }
-onSnapshot(ref,snap=>{state=snap.data();renderAll();});
+onSnapshot(ref,snap=>{ state=snap.data(); renderAll(); });
 };
 
+/* ----------- Helpers ----------- */
 function updateField(path,val){
 const ref=doc(db,"games",gameId);
-const payload={};payload[path]=val;updateDoc(ref,payload);
+const payload={}; payload[path]=val; updateDoc(ref,payload);
 }
-
 function signed(n){return n>0?`+${n}`:`${n}`;}
 function sumPar(par){return Array.from({length:HOLES},(_,i)=>par["h"+(i+1)]??4).reduce((a,b)=>a+Number(b),0);}
-
 function playerTotal(p,par,scores){
 let s=0,d=0,has=false;
-for(let h=1;h<=HOLES;h++){const sc=scores[p]?.["h"+h];const pa=par["h"+h]??4;
-if(sc!=null){s+=+sc;d+=(+sc-pa);has=true;}}
-return {s:has?s:null,delta:has?d:0};
+for(let h=1;h<=HOLES;h++){ const sc=scores[p]?.["h"+h]; const pa=par["h"+h]??4; if(sc!=null){ s+=+sc; d+=(+sc-pa); has=true; } }
+return {s:has?s:null, delta:has?d:0};
 }
-
 function bestBall(team,par,scores){
 let gross=0,has=false;
 for(let h=1;h<=HOLES;h++){
-const a=scores[team.players[0]]?.["h"+h],b=scores[team.players[1]]?.["h"+h];
-let best=null;if(a!=null&&b!=null)best=Math.min(+a,+b);else if(a!=null)best=+a;else if(b!=null)best=+b;
-if(best!=null){gross+=best;has=true;}
+const a=scores[team.players[0]]?.["h"+h], b=scores[team.players[1]]?.["h"+h];
+let best=null; if(a!=null&&b!=null) best=Math.min(+a,+b); else if(a!=null) best=+a; else if(b!=null) best=+b;
+if(best!=null){ gross+=best; has=true; }
 }
-const pars=sumPar(par);const net=has?gross-(team.hcp||0):null;const delta=has?gross-pars:0;
-return {gross:has?gross:null,net,delta};
+const pars=sumPar(par), net=has?gross-(team.hcp||0):null, delta=has?gross-pars:0;
+return {gross:has?gross:null, net, delta};
 }
-
 function colorClass(diff){
 if(diff<=-2)return"eagle";
 if(diff==-1)return"birdie";
@@ -157,6 +230,7 @@ if(diff>=3)return"bogey3";
 return"";
 }
 
+/* ----------- Render: tabela ----------- */
 function renderTable(par,scores){
 thead.innerHTML=`<tr><th>Dołek</th><th>PAR</th>${PLAYERS.map(p=>`<th>${p}</th>`).join("")}<th>± do PAR</th></tr>`;
 tbody.innerHTML="";
@@ -164,90 +238,204 @@ for(let h=1;h<=HOLES;h++){
 const parVal=par["h"+h]??4;
 let row=`<td>H${h}</td><td><input class="par" data-hole="${h}" type="number" min="3" max="6" value="${parVal}"></td>`;
 for(const p of PLAYERS){
-const v=scores[p]?.["h"+h];
-const diff=v!=null?v-parVal:null;
-const cls=colorClass(diff);
+const v=scores[p]?.["h"+h], diff=v!=null?v-parVal:null, cls=colorClass(diff);
 row+=`<td><input class="score ${cls}" data-player="${p}" data-hole="${h}" type="number" value="${v??""}" min="1" max="20"></td>`;
 }
 const txt=PLAYERS.map(n=>{
-const sc=scores[n]?.["h"+h];if(sc==null)return null;
-const d=sc-(par["h"+h]??4);return `${n}:${signed(d)}`;
+const sc=scores[n]?.["h"+h]; if(sc==null) return null;
+const d=sc-(par["h"+h]??4); return `${n}:${signed(d)}`;
 }).filter(Boolean).join(" • ");
 row+=`<td><span class="badge">${txt||"—"}</span></td>`;
-const tr=document.createElement("tr");tr.innerHTML=row;tbody.append(tr);
+const tr=document.createElement("tr"); tr.innerHTML=row; tbody.append(tr);
 }
 tfoot.innerHTML="";
-const trf=document.createElement("tr");const pars=sumPar(par);
+const trf=document.createElement("tr"), pars=sumPar(par);
 trf.innerHTML=`<th>SUMA</th><th>${pars}</th>`+
 PLAYERS.map(p=>{
 const t=playerTotal(p,par,scores);
 return `<th><span class="badge ${t.delta<0?"good":t.delta>0?"bad":""}">${t.s??"-"} (${signed(t.delta)})</span></th>`;
 }).join("")+`<th></th>`;
 tfoot.append(trf);
+
 tbody.querySelectorAll("input.par").forEach(i=>i.onchange=()=>updateField(`par.h${i.dataset.hole}`,+i.value));
-tbody.querySelectorAll("input.score").forEach(i=>i.onchange=()=>{
-updateField(`scores.${i.dataset.player}.h${i.dataset.hole}`,i.value===""?null:+i.value);
+tbody.querySelectorAll("input.score").forEach(i=>i.onchange=()=>updateField(`scores.${i.dataset.player}.h${i.dataset.hole}`,i.value===""?null:+i.value));
+}
+
+/* ----------- Render: FLIP animation for leaderboards ----------- */
+function flipAnimate(container, newOrderNodes){
+const first = new Map();
+Array.from(container.children).forEach(el => first.set(el.dataset.key, el.getBoundingClientRect().top));
+
+// re-order DOM to match new order
+newOrderNodes.forEach(n => container.appendChild(n));
+
+Array.from(container.children).forEach(el=>{
+const key = el.dataset.key;
+const lastTop = el.getBoundingClientRect().top;
+const delta = (first.has(key)? first.get(key) - lastTop : 0);
+if(Math.abs(delta)>0.5){
+el.classList.add('animating','ghost');
+el.style.transform = `translateY(${delta}px)`;
+requestAnimationFrame(()=>{
+el.style.transform = `translateY(0)`;
+el.addEventListener('transitionend', ()=>{ el.classList.remove('animating','ghost'); el.style.transform=''; }, {once:true});
+});
+}
 });
 }
 
+/* ----------- Render: leaderboards ----------- */
 function renderLeaders(par,scores){
-leaderboard.innerHTML="";
 const pars=sumPar(par);
-const arr=PLAYERS.map(p=>({name:p,...playerTotal(p,par,scores)})).filter(x=>x.s!=null).sort((a,b)=>a.delta-b.delta);
-arr.forEach((it,i)=>{
-const c=document.createElement("div");c.className="card";
-c.innerHTML=`<div class="flex-between"><h3>${i+1}. ${it.name}</h3>
+const data=PLAYERS.map(p=>({name:p,...playerTotal(p,par,scores)}))
+.filter(x=>x.s!=null)
+.sort((a,b)=>a.delta-b.delta||a.s-b.s);
+
+// build nodes keyed by player
+const nodes = data.map((it,i)=>{
+let card = leaderboard.querySelector(`[data-key="${it.name}"]`);
+if(!card){
+card = document.createElement("div");
+card.className = "card";
+card.dataset.key = it.name;
+}
+card.innerHTML = `<div class="flex-between"><h3>${i+1}. ${it.name}</h3>
 <span class="badge ${it.delta<0?"good":it.delta>0?"bad":""}">${it.s} (${signed(it.delta)})</span></div>
 <div class="tiny muted">Par pola: ${pars}</div>`;
-leaderboard.append(c);
+return card;
 });
+
+flipAnimate(leaderboard, nodes);
 }
 
 function renderTeams(par,scores){
-teamboard.innerHTML="";
 const pars=sumPar(par);
-Object.entries(TEAMS).map(([id,t])=>({...t,...bestBall(t,par,scores)}))
-.sort((a,b)=>(a.net??1e9)-(b.net??1e9))
-.forEach((it,i)=>{
-const c=document.createElement("div");c.className="card";
+const items = Object.entries(TEAMS)
+.map(([id,t])=>({id,...t,...bestBall(t,par,scores)}))
+.sort((a,b)=>(a.net??1e9)-(b.net??1e9));
+
+const nodes = items.map((it,i)=>{
+let card = teamboard.querySelector(`[data-key="${it.id}"]`);
+if(!card){
+card = document.createElement("div");
+card.className = "card";
+card.dataset.key = it.id;
+}
 const grossStr=it.gross!=null?`${it.gross} (${signed(it.delta)})`:"-";
 const netStr=it.net!=null?`${it.net}`:"-";
-c.innerHTML=`<div class="flex-between"><h3>${i+1}. ${it.name}</h3>
+card.innerHTML=`<div class="flex-between"><h3>${i+1}. ${it.name}</h3>
 <div><span class="badge ${it.delta<0?"good":it.delta>0?"bad":""}">BRUTTO: ${grossStr}</span>
 <span class="badge">NETTO: ${netStr}</span></div></div>
-<div class="tiny muted">HCP: ${it.hcp}</div>`;
-teamboard.append(c);
+<div class="tiny muted">HCP: ${it.hcp} • Par (Best Ball): ${pars}</div>`;
+return card;
 });
+
+flipAnimate(teamboard, nodes);
 }
 
+/* ----------- Render: statystyki ----------- */
 function renderStats(par,scores){
 stats.innerHTML="";
 PLAYERS.forEach(p=>{
-let bird=0,eagle=0,parsC=0,bog1=0,bog2=0,bog3=0,total=0,count=0;
+let eagle=0,bird=0,parsC=0,b1=0,b2=0,b3=0,total=0,count=0;
 for(let h=1;h<=HOLES;h++){
-const sc=scores[p]?.["h"+h];const pa=par["h"+h]??4;if(sc!=null){count++;total+=sc;
+const sc=scores[p]?.["h"+h], pa=par["h"+h]??4;
+if(sc!=null){count++; total+=sc;
 const diff=sc-pa;
-if(diff<=-2)eagle++;else if(diff==-1)bird++;else if(diff==0)parsC++;
-else if(diff==1)bog1++;else if(diff==2)bog2++;else if(diff>=3)bog3++;
+if(diff<=-2)eagle++; else if(diff==-1)bird++; else if(diff==0)parsC++;
+else if(diff==1)b1++; else if(diff==2)b2++; else if(diff>=3)b3++;
 }
 }
-if(count===0)return;
+if(!count) return;
 const avg=(total/count).toFixed(1);
-const card=document.createElement("div");card.className="stats-card";
+const card=document.createElement("div"); card.className="stats-card";
 card.innerHTML=`<b>${p}</b><br>
 Średni wynik: ${avg}<br>
 Eagle: ${eagle}, Birdie: ${bird}, Par: ${parsC}<br>
-+1: ${bog1}, +2: ${bog2}, +3+: ${bog3}`;
++1: ${b1}, +2: ${b2}, +3+: ${b3}`;
 stats.append(card);
 });
 }
 
+/* ----------- Render all ----------- */
 function renderAll(){
-const par=state.par||{},scores=state.scores||{};
-renderTable(par,scores);
+const par=state.par||{}, scores=state.scores||{};
 renderLeaders(par,scores);
 renderTeams(par,scores);
+// Tabela + statsy tylko poza TV mode
+if(!document.body.classList.contains('tv')){
+renderTable(par,scores);
 renderStats(par,scores);
+}
+}
+
+/* ----------- POGODA: Open-Meteo co 15 min ----------- */
+/* Współrzędne Kalinowe Pole (przyjęte w okolicy Lubuskie):
+Jeśli chcesz skorygować: zmień latitude/longitude poniżej. */
+const meteoCfg = {
+latitude: 52.135, // ~Kalinowe Pole (przybliżone)
+longitude: 15.545,
+hourly: "temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m",
+current: "temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code",
+wind_speed_unit: "ms",
+timezone: "Europe/Warsaw"
+};
+const weatherEls = {
+temp: document.getElementById('wTemp'),
+app: document.getElementById('wApp'),
+wind: document.getElementById('wWind'),
+dir: document.getElementById('wDir'),
+cond: document.getElementById('wCond'),
+time: document.getElementById('wTime')
+};
+function degToDir(deg){
+if(deg==null) return "--";
+const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const i = Math.round((deg%360)/22.5) % 16;
+return dirs[i];
+}
+function codeToText(code){
+const map={
+0:"Czyste niebo",1:"Głównie słonecznie",2:"Częściowe zachmurzenie",3:"Zachmurzenie",
+45:"Mgła",48:"Osadzająca mgła",51:"Mżawka lekka",53:"Mżawka umiark.",55:"Mżawka silna",
+61:"Deszcz lekki",63:"Deszcz umiark.",65:"Deszcz silny",
+71:"Śnieg lekki",73:"Śnieg umiark.",75:"Śnieg silny",
+80:"Przelotny deszcz lekki",81:"Przelotny deszcz",82:"Ulewy",
+95:"Burza",96:"Burza z gradem",99:"Silna burza z gradem"
+};
+return map[code] || "—";
+}
+async function refreshWeather(){
+try{
+const qs = new URLSearchParams(meteoCfg).toString();
+const url = `https://api.open-meteo.com/v1/forecast?${qs}`;
+const res = await fetch(url);
+const data = await res.json();
+const c = data.current || data.current_weather || {};
+const t = Math.round(c.temperature_2m ?? c.temperature ?? NaN);
+const ta = Math.round(c.apparent_temperature ?? NaN);
+const ws = (c.wind_speed_10m ?? c.windspeed ?? 0).toFixed(1);
+const wd = c.wind_direction_10m ?? c.winddirection ?? null;
+const code = c.weather_code ?? c.weathercode ?? null;
+
+weatherEls.temp.textContent = isFinite(t)? `${t}°C` : "--°C";
+weatherEls.app.textContent = isFinite(ta)? `${ta}` : "--";
+weatherEls.wind.textContent = `${ws} m/s`;
+weatherEls.dir.textContent = degToDir(wd);
+weatherEls.cond.textContent = codeToText(code);
+const now = new Date();
+weatherEls.time.textContent = now.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+}catch(e){
+weatherEls.cond.textContent = "Błąd pobierania pogody";
+}
+}
+refreshWeather();
+setInterval(refreshWeather, 15*60*1000); // co 15 minut
+
+/* ----------- Auto-join jeśli hash ----------- */
+if(location.hash.length>1){
+document.getElementById("gameId").value = decodeURIComponent(location.hash.slice(1));
+document.getElementById("joinBtn").click();
 }
 </script>
 </body>
