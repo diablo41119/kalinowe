@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
 <title>Turniej Kalinowe Pole – LiveScore (Pary)</title>
 <style>
-:root{--bg:#0b1020;--card:#121933;--muted:#9bb0d6;--accent:#9fd25b;--text:#eef3ff;--danger:#ff7070;--ok:#7be495;}
-body.light{--bg:#f2f4ff;--card:#ffffff;--muted:#5b678a;--accent:#0077ff;--text:#0a0a0a;--danger:#d94a4a;--ok:#15803d;}
+:root{--bg:#0b1020;--card:#121933;--muted:#9bb0d6;--accent:#9fd25b;--text:#eef3ff;}
+body.light{--bg:#f2f4ff;--card:#ffffff;--muted:#5b678a;--accent:#0077ff;--text:#0a0a0a;}
 *{box-sizing:border-box;font-family:-apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial}
 body{margin:0;background:var(--bg);color:var(--text)}
 header{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);backdrop-filter:blur(8px);
@@ -17,23 +17,21 @@ button{cursor:pointer;border:none;border-radius:10px;padding:8px 12px;font-weigh
 .btn{background:var(--accent);color:#0a0a0a}
 .secondary{background:var(--card);color:var(--text);border:1px solid #2a3a72}
 input[type=text]{padding:8px 10px;border-radius:10px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
+
 main{padding:10px;max-width:1200px;margin:0 auto}
 .section-title{margin:14px 4px 6px;font-weight:900;color:var(--accent);font-size:18px}
-.grid{overflow:auto;border-radius:12px;border:1px solid #2a3a72;background:var(--card)}
-table{width:100%;border-collapse:collapse;min-width:760px}
-th,td{padding:6px;border-bottom:1px dashed #243468;text-align:center}
 
-/* poprawiony sticky nagłówek */
-thead th{
-position: sticky;
-top: var(--stickyOffset, 140px);
-background: var(--card);
-z-index: 10;
-}
-
+.grid{border-radius:12px;border:1px solid #2a3a72;background:var(--card);overflow:hidden}
+.table-wrap{width:100%}
+table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:760px}
+th,td{padding:8px;border-bottom:1px dashed #243468;text-align:center;white-space:nowrap}
 th:first-child,td:first-child{text-align:left;padding-left:10px}
-input[type=number]{width:70px;text-align:center;padding:6px;border-radius:8px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
+thead th{background:rgba(255,255,255,0.03);border-bottom:1px solid #2a3a72}
+.body-scroll{overflow:auto;-webkit-overflow-scrolling:touch;max-height:70vh} /* przewija się tylko część z dołkami */
+
+input[type=number]{width:70px;text-align:center;padding:8px;border-radius:8px;border:1px solid #2a3a72;background:#0e1430;color:var(--text)}
 body.light input[type=number]{background:#fff;color:#000;border:1px solid #ccc}
+
 .leaderboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid #2a3a72;border-radius:12px;padding:10px}
 .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -44,7 +42,7 @@ body.light input[type=number]{background:#fff;color:#000;border:1px solid #ccc}
 .spinner{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,.6);color:#fff;font-size:18px;z-index:200}
 .hidden{display:none}
 .toggle-bar{margin-left:auto;display:flex;gap:6px;align-items:center}
-@media(max-width:480px){thead th{top:var(--stickyOffset,150px)}input[type=number]{width:66px}}
+@media(max-width:480px){input[type=number]{width:66px}}
 </style>
 </head>
 <body>
@@ -69,29 +67,30 @@ body.light input[type=number]{background:#fff;color:#000;border:1px solid #ccc}
 <section id="teamboard" class="leaderboard"></section>
 
 <div class="grid">
-<table><thead id="thead"></thead><tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot></table>
+<!-- OSOBNO: nagłówek -->
+<div class="table-wrap">
+<table id="scoreHeader">
+<thead id="thead"></thead>
+</table>
+</div>
+<!-- OSOBNO: przewijane ciało + stopka -->
+<div class="table-wrap body-scroll">
+<table id="scoreBody">
+<tbody id="tbody"></tbody>
+<tfoot id="tfoot"></tfoot>
+</table>
+</div>
 </div>
 
 <p class="footer">Live Firestore • Best Ball • Kalinowe Pole</p>
 </main>
 
 <script type="module">
-// --- dynamiczny offset sticky headera ---
-function setStickyOffset(){
-const header = document.querySelector('header');
-if (!header) return;
-const h = header.offsetHeight || 0;
-document.documentElement.style.setProperty('--stickyOffset', (h + 12) + 'px');
-}
-window.addEventListener('load', setStickyOffset);
-window.addEventListener('resize', setStickyOffset);
-new ResizeObserver(setStickyOffset).observe(document.querySelector('header'));
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// Firebase (Twój projekt)
+/* Firebase (Twój projekt) */
 const app = initializeApp({
 apiKey:"AIzaSyDSd57ttRgz_kpaVKurxg7dSXnTSrjQF54",
 authDomain:"kalinowe-pola.firebaseapp.com",
@@ -99,7 +98,7 @@ projectId:"kalinowe-pola"
 });
 const db = getFirestore(app);
 
-// Ustawienia
+/* Ustawienia */
 const PLAYERS=["Oliwia","Karolina","Jędrek","Mikołaj","Krystian","Kosma"];
 const DEFAULT_TEAMS={
 jk:{name:"Jędrek + Kosma",players:["Jędrek","Kosma"],hcp:30},
@@ -109,32 +108,32 @@ ko:{name:"Karolina + Oliwia",players:["Karolina","Oliwia"],hcp:38}
 const HOLES=18;
 let state={}, gameId="kalinowe";
 
-// UI refs
+/* UI refs */
 const thead=document.getElementById("thead"),tbody=document.getElementById("tbody"),tfoot=document.getElementById("tfoot");
 const leaderboard=document.getElementById("leaderboard"),teamboard=document.getElementById("teamboard");
 const spinner=document.getElementById("loading");
 const joinBtn=document.getElementById("joinBtn");
 const shareBtn=document.getElementById("shareBtn");
 
-// Theme
+/* Theme */
 document.getElementById("toggleTheme").onclick=()=>{
 document.body.classList.toggle("light");
 localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");
 };
 if(localStorage.getItem("theme")==="light")document.body.classList.add("light");
 
-// Fullscreen
+/* Fullscreen */
 document.getElementById("fullscreenBtn").onclick=()=>{
 if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
 };
 
-// Share link
+/* Share link */
 shareBtn.onclick=async()=>{
 const url=location.origin+location.pathname+"#"+encodeURIComponent(gameId||document.getElementById("gameId").value.trim()||"kalinowe");
 try{ await navigator.clipboard.writeText(url); shareBtn.textContent="Skopiowano ✅"; setTimeout(()=>shareBtn.textContent="Udostępnij link",1200);}catch(e){ alert(url); }
 };
 
-// Join
+/* Join */
 joinBtn.onclick=async()=>{
 gameId=(document.getElementById("gameId").value.trim()||"kalinowe");
 location.hash="#"+encodeURIComponent(gameId);
@@ -147,54 +146,13 @@ for(let h=1;h<=HOLES;h++) par["h"+h]=4;
 for(const p of PLAYERS){ scores[p]={}; for(let h=1;h<=HOLES;h++) scores[p]["h"+h]=null; }
 await setDoc(ref,{par,scores,teams:DEFAULT_TEAMS,updatedAt:Date.now()});
 }
-onSnapshot(ref,s=>{ spinner.classList.add("hidden"); state=s.data(); render(); });
+onSnapshot(ref,s=>{ spinner.classList.add("hidden"); state=s.data(); renderAll(); });
 };
 
-// Auto-join if hash present
+/* Auto-join by hash */
 if(location.hash.length>1){ document.getElementById("gameId").value=decodeURIComponent(location.hash.slice(1)); joinBtn.click(); }
 
-function updateField(path,val){
-const ref=doc(db,"games",gameId); const payload={}; payload[path]=val; payload.updatedAt=Date.now(); updateDoc(ref,payload);
-}
-
-function render(){
-const par=state.par||{},scores=state.scores||{};
-// Head
-thead.innerHTML=""; const thr=document.createElement("tr");
-thr.innerHTML=`<th>Dołek</th><th>PAR</th>${PLAYERS.map(p=>`<th>${p}</th>`).join("")}<th>± do PAR</th>`;
-thead.append(thr);
-// Body
-tbody.innerHTML="";
-for(let h=1;h<=HOLES;h++){
-const tr=document.createElement("tr");
-const parVal=par["h"+h]??4;
-let row=`<td>H${h}</td><td><input class="par" data-hole="${h}" type="number" min="3" max="6" value="${parVal}"></td>`;
-for(const p of PLAYERS){
-const v=(scores[p]?.["h"+h]??"");
-row+=`<td><input class="score" data-player="${p}" data-hole="${h}" type="number" inputmode="numeric" min="1" max="20" value="${v}"></td>`;
-}
-row+=`<td><span class="badge">${holeDeltas(h,par,scores)}</span></td>`;
-tr.innerHTML=row; tbody.append(tr);
-}
-// Listeners
-tbody.querySelectorAll("input.par").forEach(inp=>{
-inp.onchange=()=>updateField(`par.h${inp.dataset.hole}`,Number(inp.value)||4);
-});
-tbody.querySelectorAll("input.score").forEach(inp=>{
-inp.onchange=()=>updateField(`scores.${inp.dataset.player}.h${inp.dataset.hole}`,inp.value===""?null:Number(inp.value));
-});
-// Foot
-tfoot.innerHTML=""; const trf=document.createElement("tr");
-const parSum=sumPar(par); trf.innerHTML=`<th>SUMA</th><th>${parSum}</th>`;
-for(const p of PLAYERS){
-const t=playerTotal(p,par,scores);
-trf.innerHTML+=`<th><span class="badge ${t.delta<0?"good":t.delta>0?"bad":""}">${t.s??"-"} (${signed(t.delta)})</span></th>`;
-}
-trf.innerHTML+=`<th>do PAR</th>`; tfoot.append(trf);
-// Boards
-renderLeaders(par,scores); renderTeams(par,scores);
-}
-
+/* Helpers */
 function signed(n){return n>0?`+${n}`:`${n}`;}
 function sumPar(par){return Array.from({length:HOLES},(_,i)=>par["h"+(i+1)]??4).reduce((a,b)=>a+Number(b),0);}
 function holeDeltas(h,par,scores){
@@ -208,12 +166,58 @@ for(let h=1;h<=HOLES;h++){ const sc=scores[p]?.["h"+h]; const pa=par["h"+h]??4; 
 return {s:has?s:null, delta:has?d:0};
 }
 function bestBall(team,par,scores){
-let gross=0,has=false; for(let h=1;h<=HOLES;h++){ const a=scores[team.players[0]]?.["h"+h], b=scores[team.players[1]]?.["h"+h];
+let gross=0,has=false; for(let h=1;h<=HOLES;h++){
+const a=scores[team.players[0]]?.["h"+h], b=scores[team.players[1]]?.["h"+h];
 let best=null; if(a!=null&&b!=null) best=Math.min(+a,+b); else if(a!=null) best=+a; else if(b!=null) best=+b;
 if(best!=null){gross+=best; has=true;}
 }
 const pars=sumPar(par); const net=has?gross-(team.hcp||0):null; const delta=has?gross-pars:0;
 return {gross:has?gross:null, net, delta};
+}
+function updateField(path,val){
+const ref=doc(db,"games",gameId); const payload={}; payload[path]=val; payload.updatedAt=Date.now(); updateDoc(ref,payload);
+}
+
+/* Renderers */
+function renderHeader(par){
+thead.innerHTML="";
+const tr=document.createElement("tr");
+tr.innerHTML=`<th>Dołek</th><th>PAR</th>${PLAYERS.map(p=>`<th>${p}</th>`).join("")}<th>± do PAR</th>`;
+thead.append(tr);
+}
+function renderBody(par,scores){
+tbody.innerHTML="";
+for(let h=1;h<=HOLES;h++){
+const tr=document.createElement("tr");
+const parVal=par["h"+h]??4;
+let row=`<td>H${h}</td><td><input class="par" data-hole="${h}" type="number" min="3" max="6" value="${parVal}"></td>`;
+for(const p of PLAYERS){
+const v=(scores[p]?.["h"+h]??"");
+row+=`<td><input class="score" data-player="${p}" data-hole="${h}" type="number" inputmode="numeric" min="1" max="20" value="${v}"></td>`;
+}
+row+=`<td><span class="badge">${holeDeltas(h,par,scores)}</span></td>`;
+tr.innerHTML=row; tbody.append(tr);
+}
+// listeners
+tbody.querySelectorAll("input.par").forEach(inp=>{
+inp.onchange=()=>updateField(`par.h${inp.dataset.hole}`,Number(inp.value)||4);
+});
+tbody.querySelectorAll("input.score").forEach(inp=>{
+inp.onchange=()=>updateField(`scores.${inp.dataset.player}.h${inp.dataset.hole}`,inp.value===""?null:Number(inp.value));
+});
+}
+function renderFoot(par,scores){
+tfoot.innerHTML="";
+const tr=document.createElement("tr");
+const parSum=sumPar(par);
+tr.innerHTML=`<th>SUMA</th><th>${parSum}</th>`+
+PLAYERS.map(p=>{
+const t=playerTotal(p,par,scores);
+const cls=t.delta<0?"good":t.delta>0?"bad":"";
+return `<th><span class="badge ${cls}">${t.s??"-"} (${signed(t.delta)})</span></th>`;
+}).join("")+
+`<th>do PAR</th>`;
+tfoot.append(tr);
 }
 function renderLeaders(par,scores){
 leaderboard.innerHTML="";
@@ -250,6 +254,15 @@ updateField(`teams.${it.id}.hcp`,val);
 };
 teamboard.append(card);
 });
+}
+
+function renderAll(){
+const par=state.par||{}, scores=state.scores||{};
+renderHeader(par);
+renderBody(par,scores);
+renderFoot(par,scores);
+renderLeaders(par,scores);
+renderTeams(par,scores);
 }
 </script>
 </body>
