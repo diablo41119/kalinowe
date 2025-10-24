@@ -166,13 +166,13 @@ for(let h=1;h<=HOLES;h++){ const sc=scores[p]?.["h"+h]; const pa=par["h"+h]??4; 
 return {s:has?s:null, delta:has?d:0};
 }
 function bestBall(team,par,scores){
-let gross=0,has=false; for(let h=1;h<=HOLES;h++){
+let brutto=0,has=false; for(let h=1;h<=HOLES;h++){
 const a=scores[team.players[0]]?.["h"+h], b=scores[team.players[1]]?.["h"+h];
 let best=null; if(a!=null&&b!=null) best=Math.min(+a,+b); else if(a!=null) best=+a; else if(b!=null) best=+b;
-if(best!=null){gross+=best; has=true;}
+if(best!=null){brutto+=best; has=true;}
 }
-const pars=sumPar(par); const net=has?gross-(team.hcp||0):null; const delta=has?gross-pars:0;
-return {gross:has?gross:null, net, delta};
+const pars=sumPar(par); const netto=has?brutto-(team.hcp||0):null; const delta=has?brutto-pars:0;
+return {brutto:has?brutto:null, netto, delta};
 }
 function updateField(path,val){
 const ref=doc(db,"games",gameId); const payload={}; payload[path]=val; payload.updatedAt=Date.now(); updateDoc(ref,payload);
@@ -237,15 +237,15 @@ teamboard.innerHTML="";
 const teams=(state.teams?state.teams:DEFAULT_TEAMS);
 const keys=Object.keys(teams);
 const arr=keys.map(k=>({id:k, ...teams[k], ...bestBall(teams[k],par,scores)}))
-.sort((a,b)=> (a.net??1e9)-(b.net??1e9));
+.sort((a,b)=> (a.netto??1e9)-(b.netto??1e9));
 const pars=sumPar(par);
 arr.forEach((it,i)=>{
 const card=document.createElement("div"); card.className="card";
-const grossStr=it.gross!=null?`${it.gross} (${signed(it.delta)})`:"-";
-const netStr=it.net!=null?`${it.net}`:"-";
+const bruttoStr=it.brutto!=null?`${it.brutto} (${signed(it.delta)})`:"-";
+const nettoStr=it.netto!=null?`${it.netto}`:"-";
 card.innerHTML=`<div class="flex-between"><h3>${i+1}. ${it.name}</h3>
-<div><span class="badge ${it.delta<0?"good":it.delta>0?"bad":""}">GROSS: ${grossStr}</span>
-<span class="badge">NET: ${netStr}</span></div></div>
+<div><span class="badge ${it.delta<0?"good":it.delta>0?"bad":""}">BRUTTO: ${bruttoStr}</span>
+<span class="badge">NETTO: ${nettoStr}</span></div></div>
 <div class="tiny">HCP: <input type="number" value="${it.hcp||0}" data-team="${it.id}" style="width:64px"></div>
 <div class="tiny muted">Par (Best Ball): ${pars}</div>`;
 card.querySelector("input[type=number]").onchange=e=>{
@@ -267,3 +267,4 @@ renderTeams(par,scores);
 </script>
 </body>
 </html>
+
